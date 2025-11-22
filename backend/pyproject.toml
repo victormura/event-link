@@ -10,4 +10,9 @@ dependencies = [
     "uvicorn>=0.38.0",
     "psycopg2-binary>=2.9.11",
     "pydantic-settings>=2.4.0",
+    "passlib[bcrypt]",
+    "bcrypt==4.0.1",
+    "python-jose[cryptography]",
+    "python-multipart",
+    "pydantic[email]>=2.12.3",
 ]
