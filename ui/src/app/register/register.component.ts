@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
@@ -11,17 +11,21 @@ import { AuthService } from '../services/auth.service';
   templateUrl: './register.component.html',
   styleUrl: './register.component.scss',
 })
-export class RegisterComponent {
-  form = this.fb.group({
-    fullName: [''],
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
-    confirm: ['', [Validators.required, Validators.minLength(8)]],
-  });
+export class RegisterComponent implements OnInit {
+  form!: FormGroup;
   error = '';
   loading = false;
 
   constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {}
+
+  ngOnInit(): void {
+    this.form = this.fb.group({
+      fullName: [''],
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirm: ['', [Validators.required, Validators.minLength(8)]],
+    });
+  }
 
   submit(): void {
     if (this.form.invalid) {

@@ -416,7 +416,7 @@ def my_events(db: Session = Depends(get_db), current_user: models.User = Depends
     return [_serialize_event(event, seats) for event, seats in events]
 
 
-@app.get("/api/events/recommended", response_model=List[schemas.EventResponse])
+@app.get("/api/recommendations", response_model=List[schemas.EventResponse])
 def recommended_events(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user),

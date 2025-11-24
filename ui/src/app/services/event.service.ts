@@ -37,7 +37,7 @@ export class EventService {
   }
 
   recommended(): Observable<EventItem[]> {
-    return this.http.get<EventItem[]>(`${this.baseUrl}/events/recommended`);
+    return this.http.get<EventItem[]>(`${this.baseUrl}/recommendations`);
   }
 
   getEvent(id: number): Observable<EventDetail> {
