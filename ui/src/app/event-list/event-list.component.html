@@ -1,0 +1,72 @@
+<section class="hero card">
+  <div>
+    <p class="eyebrow">Tot ce contează pe campus</p>
+    <h1>Evenimente viitoare</h1>
+    <p class="muted">Caută, filtrează și descoperă activități potrivite pentru tine.</p>
+  </div>
+  <div class="filters-grid">
+    <div class="field">
+      <label>Caută după titlu</label>
+      <input type="text" placeholder="ex: workshop" [(ngModel)]="searchText" (input)="onSearchChange()" />
+    </div>
+    <div class="field">
+      <label>Categorie</label>
+      <select [(ngModel)]="categoryFilter" (change)="fetchEvents()">
+        <option value="">Toate</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Start date</label>
+      <input type="date" [(ngModel)]="startDate" (change)="fetchEvents()" />
+    </div>
+    <div class="field">
+      <label>End date</label>
+      <input type="date" [(ngModel)]="endDate" (change)="fetchEvents()" />
+    </div>
+    <div class="field actions">
+      <button class="btn ghost" type="button" (click)="resetFilters()">Resetează filtrele</button>
+    </div>
+  </div>
+</section>
+
+<section *ngIf="auth.isStudent()" class="card" [class.tight]="!recommended.length">
+  <div class="section-title">
+    <h3>Recomandate pentru tine</h3>
+    <p class="muted" *ngIf="!recommended.length">Îți vom propune evenimente după primele înscrieri.</p>
+  </div>
+  <div class="scroll-cards" *ngIf="recommended.length">
+    <div class="event-card" *ngFor="let event of recommended" (click)="openEvent(event)">
+      <div class="date">{{ event.start_time | date: 'dd MMM' }}</div>
+      <h4>{{ event.title }}</h4>
+      <p class="muted">{{ event.location }}</p>
+      <div class="chips">
+        <span class="badge">{{ event.category }}</span>
+        <span class="tag-chip" *ngFor="let tag of event.tags">{{ tag.name }}</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="card">
+  <div class="section-title">
+    <h3>Toate evenimentele</h3>
+    <span class="muted" *ngIf="events.length">{{ events.length }} rezultate</span>
+  </div>
+  <div *ngIf="loading" class="empty-state">Se încarcă...</div>
+  <div *ngIf="!loading && errorMessage" class="empty-state">{{ errorMessage }}</div>
+  <div *ngIf="!loading && !events.length" class="empty-state">Momentan nu sunt evenimente viitoare.</div>
+  <div class="list-layout" *ngIf="!loading && events.length">
+    <div class="event-card" *ngFor="let event of events" (click)="openEvent(event)">
+      <div class="date">{{ event.start_time | date: 'dd MMM' }}</div>
+      <h3>{{ event.title }}</h3>
+      <p class="muted">{{ event.start_time | date: 'medium' }}</p>
+      <p class="muted">{{ event.location }}</p>
+      <div class="chips">
+        <span class="badge">{{ event.category }}</span>
+        <span class="tag-chip" *ngFor="let tag of event.tags">{{ tag.name }}</span>
+      </div>
+      <div class="seats">{{ seatsLabel(event) }}</div>
+    </div>
+  </div>
+</section>

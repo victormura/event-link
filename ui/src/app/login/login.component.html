@@ -1,0 +1,17 @@
+<section class="card auth-card">
+  <h1>Autentificare</h1>
+  <p class="muted">Accesează contul de student sau organizator.</p>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="field">
+      <label>Email</label>
+      <input formControlName="email" type="email" placeholder="tu@student.ro" />
+    </div>
+    <div class="field">
+      <label>Parolă</label>
+      <input formControlName="password" type="password" />
+    </div>
+    <button class="btn primary" type="submit" [disabled]="loading">Autentificare</button>
+    <div class="error" *ngIf="error">{{ error }}</div>
+    <p class="muted">Nu ai cont? <a routerLink="/register">Creează-l aici</a>.</p>
+  </form>
+</section>

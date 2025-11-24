@@ -1,0 +1,54 @@
+<section *ngIf="event" class="card details">
+  <div class="header">
+    <div>
+      <p class="muted">{{ event.category }}</p>
+      <h1>{{ event.title }}</h1>
+      <div class="meta">
+        <span>{{ event.start_time | date: 'fullDate' }} · {{ event.start_time | date: 'shortTime' }}<span *ngIf="event.end_time"> - {{ event.end_time | date: 'shortTime' }}</span></span>
+        <span>{{ event.location }}</span>
+        <span>Organizator: {{ event.owner_name }}</span>
+      </div>
+    </div>
+    <div class="actions">
+      <button *ngIf="!auth.isLoggedIn()" class="btn primary" (click)="register()">Autentifică-te pentru a te înscrie</button>
+      <button *ngIf="canRegister()" class="btn primary" (click)="register()">Înscrie-te</button>
+      <button *ngIf="auth.isStudent() && event.is_registered" class="btn ghost" disabled>Înscris</button>
+      <button
+        *ngIf="!canRegister() && !event.is_registered && (event.available_seats !== null && event.available_seats !== undefined && event.available_seats <= 0)"
+        class="btn ghost"
+        disabled
+      >
+        Locuri epuizate
+      </button>
+      <button *ngIf="auth.isLoggedIn() && !auth.isStudent() && !event.is_owner" class="btn ghost" disabled>
+        Numai studenții se pot înscrie
+      </button>
+      <div class="owner-actions" *ngIf="auth.isOrganizer() && event.is_owner">
+        <a class="btn ghost" [routerLink]="['/events', event.id, 'edit']">Editează</a>
+        <a class="btn ghost" [routerLink]="['/organizer/events', event.id, 'participants']">Participanți</a>
+        <button class="btn danger" (click)="deleteEvent()">Șterge</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <div class="label">Locuri ocupate</div>
+      <div class="value">{{ event.seats_taken }} / {{ event.max_seats }}</div>
+    </div>
+    <div class="stat-box" *ngIf="event.available_seats !== null && event.available_seats !== undefined">
+      <div class="label">Locuri rămase</div>
+      <div class="value">{{ event.available_seats }}</div>
+    </div>
+  </div>
+
+  <div class="chips">
+    <span class="tag-chip" *ngFor="let tag of event.tags">{{ tag.name }}</span>
+  </div>
+
+  <p class="description">{{ event.description }}</p>
+</section>
+
+<div *ngIf="loading" class="empty-state">Se încarcă detaliile...</div>
+<div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+<div *ngIf="error && !loading" class="error">{{ error }}</div>
