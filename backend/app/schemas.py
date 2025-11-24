@@ -47,6 +47,10 @@ class UserResponse(UserBase):
         from_attributes = True
 
 
+class OrganizerUpgradeRequest(BaseModel):
+    invite_code: str
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -76,6 +80,7 @@ class EventBase(BaseModel):
     end_time: Optional[datetime] = None
     location: str
     max_seats: int
+    cover_url: Optional[str] = None
     tags: List[str] = Field(default_factory=list)
 
 
@@ -91,6 +96,7 @@ class EventUpdate(BaseModel):
     end_time: Optional[datetime] = None
     location: Optional[str] = None
     max_seats: Optional[int] = None
+    cover_url: Optional[str] = None
     tags: Optional[List[str]] = None
 
 
@@ -103,6 +109,7 @@ class EventResponse(BaseModel):
     end_time: Optional[datetime]
     location: Optional[str]
     max_seats: Optional[int]
+    cover_url: Optional[str]
     owner_id: int
     owner_name: Optional[str]
     tags: List[TagResponse]
@@ -123,6 +130,7 @@ class ParticipantResponse(BaseModel):
     email: EmailStr
     full_name: Optional[str]
     registration_time: datetime
+    attended: bool
 
 
 class ParticipantListResponse(BaseModel):
@@ -131,3 +139,10 @@ class ParticipantListResponse(BaseModel):
     seats_taken: int
     max_seats: Optional[int]
     participants: list[ParticipantResponse]
+
+
+class PaginatedEvents(BaseModel):
+    items: List[EventResponse]
+    total: int
+    page: int
+    page_size: int

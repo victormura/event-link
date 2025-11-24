@@ -10,6 +10,7 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
     func,
+    Boolean,
 )
 from sqlalchemy.orm import relationship
 from .database import Base
@@ -53,6 +54,7 @@ class Event(Base):
     end_time = Column(TIMESTAMP(timezone=True), nullable=True)
     location = Column(String(255))
     max_seats = Column(Integer)
+    cover_url = Column(String(500))
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 
@@ -69,6 +71,7 @@ class Registration(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     event_id = Column(Integer, ForeignKey("events.id"), nullable=False)
     registration_time = Column(TIMESTAMP(timezone=True), server_default=func.now())
+    attended = Column(Boolean, server_default="false", nullable=False)
 
     user = relationship("User", back_populates="registrations")
     event = relationship("Event", back_populates="registrations")

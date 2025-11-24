@@ -5,7 +5,9 @@
       <h1>{{ data.title }}</h1>
       <p class="muted">{{ data.seats_taken }} / {{ data.max_seats || '?' }} înscriși</p>
     </div>
-    <button class="btn ghost" type="button" (click)="exportCsv()">Exportă CSV</button>
+    <div class="actions">
+      <button class="btn ghost" type="button" (click)="exportCsv()">Exportă CSV</button>
+    </div>
   </div>
 
   <div *ngIf="error" class="error">{{ error }}</div>
@@ -16,6 +18,12 @@
         <div class="muted">{{ p.email }}</div>
       </div>
       <div class="muted">{{ p.registration_time | date: 'short' }}</div>
+      <div>
+        <label>
+          <input type="checkbox" [checked]="p.attended" (change)="toggleAttendance(p.id, !p.attended)" />
+          Prezent
+        </label>
+      </div>
     </div>
   </div>
 </section>

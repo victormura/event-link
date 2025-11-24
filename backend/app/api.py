@@ -11,17 +11,21 @@ from .config import settings
 from .database import engine, get_db
 from .email_service import send_registration_email
 
-models.Base.metadata.create_all(bind=engine)
-
 app = FastAPI(title="Event Link API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4200"],
+    allow_origins=settings.allowed_origins or [],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def _on_startup():
+    if settings.auto_create_tables:
+        models.Base.metadata.create_all(bind=engine)
 
 
 def _ensure_role(user: models.User, roles: list[models.UserRole]) -> None:
@@ -85,11 +89,12 @@ def _serialize_event(event: models.Event, seats_taken: int) -> schemas.EventResp
         end_time=event.end_time,
         location=event.location,
         max_seats=event.max_seats,
-        owner_id=event.owner_id,
-        owner_name=owner_name,
-        tags=event.tags,
-        seats_taken=int(seats_taken or 0),
-    )
+    owner_id=event.owner_id,
+    owner_name=owner_name,
+    tags=event.tags,
+    seats_taken=int(seats_taken or 0),
+    cover_url=event.cover_url,
+)
 
 
 @app.post("/register", response_model=schemas.Token)
@@ -141,6 +146,22 @@ def get_me(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
 
 
+@app.post("/organizer/upgrade")
+def upgrade_to_organizer(
+    request: schemas.OrganizerUpgradeRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    if current_user.role == models.UserRole.organizator:
+        return {"status": "already_organizer"}
+    if not settings.organizer_invite_code or request.invite_code != settings.organizer_invite_code:
+        raise HTTPException(status_code=403, detail="Cod invalid sau lipsă.")
+    current_user.role = models.UserRole.organizator
+    db.add(current_user)
+    db.commit()
+    return {"status": "upgraded"}
+
+
 @app.get("/")
 def read_root():
     return {"message": "Hello from Event Link API!"}
@@ -151,16 +172,22 @@ def health_check():
     return {"status": "healthy"}
 
 
-@app.get("/api/events", response_model=List[schemas.EventResponse])
+@app.get("/api/events", response_model=schemas.PaginatedEvents)
 def get_events(
     search: Optional[str] = None,
     category: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     include_past: bool = False,
+    page: int = 1,
+    page_size: int = 10,
     db: Session = Depends(get_db),
     current_user: Optional[models.User] = Depends(auth.get_optional_user),
 ):
+    if page < 1:
+        raise HTTPException(status_code=400, detail="Pagina trebuie să fie cel puțin 1.")
+    if page_size < 1 or page_size > 100:
+        raise HTTPException(status_code=400, detail="Dimensiunea paginii trebuie să fie între 1 și 100.")
     now = datetime.now(timezone.utc)
     query = db.query(models.Event)
     if not include_past:
@@ -175,10 +202,13 @@ def get_events(
     if end_date:
         end_dt = datetime.combine(end_date, datetime.max.time()).replace(tzinfo=timezone.utc)
         query = query.filter(models.Event.start_time <= end_dt)
+    total = query.count()
     query = query.order_by(models.Event.start_time)
     query, seats_subquery = _events_with_counts_query(db, query)
+    query = query.offset((page - 1) * page_size).limit(page_size)
     events = query.all()
-    return [_serialize_event(event, seats) for event, seats in events]
+    items = [_serialize_event(event, seats) for event, seats in events]
+    return {"items": items, "total": total, "page": page, "page_size": page_size}
 
 
 @app.get("/api/events/{event_id}", response_model=schemas.EventDetailResponse)
@@ -207,6 +237,7 @@ def get_event(event_id: int, db: Session = Depends(get_db), current_user: Option
         end_time=event.end_time,
         location=event.location,
         max_seats=event.max_seats,
+        cover_url=event.cover_url,
         owner_id=event.owner_id,
         owner_name=owner_name,
         tags=event.tags,
@@ -239,6 +270,7 @@ def create_event(
         end_time=end_time,
         location=event.location,
         max_seats=event.max_seats,
+        cover_url=event.cover_url,
         owner_id=current_user.id,
     )
     _attach_tags(db, new_event, event.tags or [])
@@ -282,6 +314,8 @@ def update_event(
         if update.max_seats <= 0:
             raise HTTPException(status_code=400, detail="Numărul maxim de locuri trebuie să fie pozitiv.")
         db_event.max_seats = update.max_seats
+    if update.cover_url is not None:
+        db_event.cover_url = update.cover_url
     if update.tags is not None:
         _attach_tags(db, db_event, update.tags)
 
@@ -331,7 +365,7 @@ def event_participants(
         raise HTTPException(status_code=403, detail="Nu aveți dreptul să accesați acest eveniment.")
 
     participants = (
-        db.query(models.User, models.Registration.registration_time)
+        db.query(models.User, models.Registration.registration_time, models.Registration.attended)
         .join(models.Registration, models.User.id == models.Registration.user_id)
         .filter(models.Registration.event_id == event_id)
         .order_by(models.Registration.registration_time)
@@ -343,8 +377,9 @@ def event_participants(
             email=user.email,
             full_name=user.full_name,
             registration_time=reg_time,
+            attended=attended,
         )
-        for user, reg_time in participants
+        for user, reg_time, attended in participants
     ]
     seats_taken = len(participants)
     return schemas.ParticipantListResponse(
@@ -354,6 +389,35 @@ def event_participants(
         max_seats=event.max_seats,
         participants=participant_list,
     )
+
+
+@app.put("/api/organizer/events/{event_id}/participants/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def update_participant_attendance(
+    event_id: int,
+    user_id: int,
+    attended: bool,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    _ensure_role(current_user, [models.UserRole.organizator])
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Evenimentul nu există")
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Nu aveți dreptul să modificați acest eveniment.")
+
+    registration = (
+        db.query(models.Registration)
+        .filter(models.Registration.event_id == event_id, models.Registration.user_id == user_id)
+        .first()
+    )
+    if not registration:
+        raise HTTPException(status_code=404, detail="Participarea nu a fost găsită.")
+
+    registration.attended = attended
+    db.add(registration)
+    db.commit()
+    return
 
 
 @app.post("/api/events/{event_id}/register", status_code=status.HTTP_201_CREATED)
@@ -398,8 +462,42 @@ def register_for_event(
         f"Locația: {event.location}.\n\n"
         "Ne vedem acolo!"
     )
-    send_registration_email(background_tasks, current_user.email, subject, body)
+    send_registration_email(
+        background_tasks,
+        current_user.email,
+        subject,
+        body,
+        context={"user_id": current_user.id, "event_id": event.id},
+    )
     return {"status": "registered"}
+
+
+@app.delete("/api/events/{event_id}/register", status_code=status.HTTP_204_NO_CONTENT)
+def unregister_from_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    _ensure_role(current_user, [models.UserRole.student])
+    event = db.query(models.Event).filter(models.Event.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Evenimentul nu există")
+    now = datetime.now(timezone.utc)
+    start_time = _normalize_dt(event.start_time)
+    if start_time and start_time < now:
+        raise HTTPException(status_code=400, detail="Nu te poți dezabona după ce evenimentul a început.")
+
+    registration = (
+        db.query(models.Registration)
+        .filter(models.Registration.event_id == event_id, models.Registration.user_id == current_user.id)
+        .first()
+    )
+    if not registration:
+        raise HTTPException(status_code=400, detail="Nu ești înscris la acest eveniment.")
+
+    db.delete(registration)
+    db.commit()
+    return
 
 
 @app.get("/api/me/events", response_model=List[schemas.EventResponse])

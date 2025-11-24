@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
+    allowed_origins: list[str] = ["http://localhost:4200"]
+    auto_create_tables: bool = False
+    organizer_invite_code: str | None = None
     smtp_host: str | None = None
     smtp_port: int | None = None
     smtp_username: str | None = None

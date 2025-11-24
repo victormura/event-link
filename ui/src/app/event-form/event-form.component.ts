@@ -40,6 +40,7 @@ export class EventFormComponent implements OnInit {
       location: ['', Validators.required],
       maxSeats: [50, [Validators.required, Validators.min(1)]],
       tagInput: [''],
+      coverUrl: [''],
     });
 
     const id = this.route.snapshot.paramMap.get('id');
@@ -71,6 +72,7 @@ export class EventFormComponent implements OnInit {
           endTime,
           location: event.location,
           maxSeats: event.max_seats,
+          coverUrl: event.cover_url,
         });
         this.tags = event.tags.map((t) => t.name);
       },
@@ -97,7 +99,7 @@ export class EventFormComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
-    const { title, description, category, date, startTime, endTime, location, maxSeats } = this.form.value;
+    const { title, description, category, date, startTime, endTime, location, maxSeats, coverUrl } = this.form.value;
     const start = new Date(`${date}T${startTime}`);
     const end = endTime ? new Date(`${date}T${endTime}`) : undefined;
     const now = new Date();
@@ -119,6 +121,7 @@ export class EventFormComponent implements OnInit {
       location,
       max_seats: Number(maxSeats),
       tags: this.tags,
+      cover_url: coverUrl || undefined,
     };
 
     if (this.editMode && this.eventId) {

@@ -14,10 +14,32 @@ event-link/
 
 ## Prerequisites
 
-- **Node.js**: Version 20.18.1 or higher
-- **npm**: Comes with Node.js
-- **Python**: Version 3.11 or higher
-- **uv**: Python package manager (install with `pip install uv` or `brew install uv`)
+- **Node.js**: Version 20+ (LTS recommended)
+- **npm**
+- **Python**: Version 3.11+
+
+## Configuration (backend)
+
+Create `backend/.topsecret` (env file) with at least:
+```
+DATABASE_URL=postgresql://user:pass@host:5432/db
+SECRET_KEY=change-me
+ALLOWED_ORIGINS=["http://localhost:4200"]
+AUTO_CREATE_TABLES=true
+# Email (optional)
+SMTP_HOST=smtp.mailhost.com
+SMTP_PORT=587
+SMTP_USERNAME=user
+SMTP_PASSWORD=pass
+SMTP_SENDER=notifications@eventlink.test
+SMTP_USE_TLS=true
+```
+
+Key settings:
+- `ALLOWED_ORIGINS`: CORS origins list (comma/JSON list).
+- `AUTO_CREATE_TABLES`: Set `true` for local/dev convenience; use migrations in prod.
+- `SECRET_KEY`: JWT signing secret.
+- `DATABASE_URL`: Point to Postgres/SQLite/etc.
 
 ## Installation
 
@@ -53,6 +75,7 @@ event-link/
    ```
 
 ## Running the Application
+From the repo root you can also double-click `start.bat` on Windows to launch both servers (installs backend deps if missing).
 
 ### Start the Backend (FastAPI)
 
@@ -84,71 +107,14 @@ npm start
 ng serve
 ```
 
-The frontend will be available at: http://localhost:4200
+The frontend will be available at: http://localhost:4200. Configure the API base URL in `ui/src/environments/environment.ts` (replaced with `environment.prod.ts` for production builds).
 
-## Development
+## API Endpoints (high level)
 
-### Backend Development
-
-The FastAPI backend includes:
-- CORS middleware configured for Angular development server
-- Health check endpoint at `/api/health`
-- Auto-reloading with `--reload` flag
-- Interactive API documentation
-
-### Frontend Development
-
-The Angular application includes:
-- Angular Material UI components
-- SCSS styling
-- Routing enabled
-- Development server with hot reload
-
-### Making Changes
-
-1. **Backend**: The FastAPI server will automatically reload when you make changes to Python files
-2. **Frontend**: The Angular development server will automatically reload when you make changes to TypeScript/HTML/SCSS files
-
-## API Endpoints
-
-- `GET /` - Welcome message
-- `GET /api/health` - Health check
-- `GET /api/events` - Get events (placeholder)
-
-## Technologies Used
-
-### Frontend
-- **Angular 18** - Frontend framework
-- **Angular Material** - UI component library
-- **SCSS** - Styling
-- **TypeScript** - Programming language
-
-### Backend
-- **FastAPI** - Web framework
-- **Uvicorn** - ASGI server
-- **Pydantic** - Data validation
-- **Python 3.11+** - Programming language
-
-## Next Steps
-
-1. Implement authentication system
-2. Add database integration (PostgreSQL/SQLite)
-3. Create event management features
-4. Add user management
-5. Implement real-time features with WebSockets
-6. Add testing (Jest for Angular, pytest for FastAPI)
-7. Set up CI/CD pipeline
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port already in use**: Change the port in the run commands
-2. **Node.js version issues**: Update Node.js to the latest LTS version
-3. **Python version issues**: Ensure Python 3.11+ is installed
-4. **uv not found**: Install uv using `pip install uv` or `brew install uv`
-
-### Logs
-
-- Backend logs will appear in the terminal where you started the FastAPI server
-- Frontend logs will appear in the browser console and terminal where you started the Angular dev server
+- `POST /register` – student registration + JWT
+- `POST /login` – login
+- `GET /api/events` – paginated events with filters
+- `POST /api/events` – organizer create (auth)
+- `POST /api/events/{id}/register` – student register for event
+- `GET /api/recommendations` – student recommendations
+- Plus organizer tools, participant views, and health at `/api/health`.

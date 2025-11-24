@@ -24,6 +24,13 @@ export interface EventDetail extends EventItem {
   available_seats?: number;
 }
 
+export interface PaginatedEvents {
+  items: EventItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export interface AuthToken {
   access_token: string;
   token_type: string;

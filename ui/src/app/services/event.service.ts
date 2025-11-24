@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { EventDetail, EventItem, ParticipantList } from '../models';
+import { EventDetail, EventItem, ParticipantList, PaginatedEvents } from '../models';
+import { API_BASE_URL } from '../api-tokens';
 
 export interface EventPayload {
   title: string;
@@ -18,22 +19,28 @@ export interface EventPayload {
   providedIn: 'root',
 })
 export class EventService {
-  private readonly baseUrl = 'http://localhost:8000/api';
+  private readonly baseUrl: string;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, @Inject(API_BASE_URL) apiBaseUrl: string) {
+    this.baseUrl = `${apiBaseUrl}/api`;
+  }
 
   listEvents(filters?: {
     search?: string;
     category?: string;
     start_date?: string | null;
     end_date?: string | null;
-  }): Observable<EventItem[]> {
+    page?: number;
+    page_size?: number;
+  }): Observable<PaginatedEvents> {
     let params = new HttpParams();
     if (filters?.search) params = params.set('search', filters.search);
     if (filters?.category) params = params.set('category', filters.category);
     if (filters?.start_date) params = params.set('start_date', filters.start_date);
     if (filters?.end_date) params = params.set('end_date', filters.end_date);
-    return this.http.get<EventItem[]>(`${this.baseUrl}/events`, { params });
+    if (filters?.page) params = params.set('page', filters.page);
+    if (filters?.page_size) params = params.set('page_size', filters.page_size);
+    return this.http.get<PaginatedEvents>(`${this.baseUrl}/events`, { params });
   }
 
   recommended(): Observable<EventItem[]> {

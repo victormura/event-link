@@ -1,17 +1,19 @@
-import { Injectable } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, switchMap, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { AuthToken, User } from '../models';
+import { API_BASE_URL } from '../api-tokens';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly baseUrl = 'http://localhost:8000';
+  private readonly baseUrl: string;
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, @Inject(API_BASE_URL) baseUrl: string) {
+    this.baseUrl = baseUrl;
     this.restoreSession();
   }
 

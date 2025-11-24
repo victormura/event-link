@@ -3,6 +3,7 @@
   justify-content: space-between;
   padding: 0.75rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
 }
 
 .participant:last-child {
@@ -15,4 +16,9 @@
 
 .error {
   color: #ff7a7a;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
 }

@@ -1,4 +1,5 @@
 <section *ngIf="event" class="card details">
+  <img *ngIf="event.cover_url" [src]="event.cover_url" alt="cover image" class="cover" />
   <div class="header">
     <div>
       <p class="muted">{{ event.category }}</p>

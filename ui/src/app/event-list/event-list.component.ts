@@ -21,6 +21,10 @@ export class EventListComponent implements OnInit {
   categoryFilter = '';
   startDate: string | null = null;
   endDate: string | null = null;
+  page = 1;
+  pageSize = 10;
+  total = 0;
+  Math = Math;
   loading = false;
   errorMessage = '';
 
@@ -50,11 +54,16 @@ export class EventListComponent implements OnInit {
         category: this.categoryFilter || undefined,
         start_date: this.startDate,
         end_date: this.endDate,
+        page: this.page,
+        page_size: this.pageSize,
       })
       .subscribe({
-        next: (events) => {
-          this.events = events;
-          this.categories = Array.from(new Set(events.map((e) => e.category).filter((c): c is string => !!c)));
+        next: (result) => {
+          this.events = result.items;
+          this.total = result.total;
+          this.page = result.page;
+          this.pageSize = result.page_size;
+          this.categories = Array.from(new Set(result.items.map((e) => e.category).filter((c): c is string => !!c)));
           this.loading = false;
         },
         error: () => {
@@ -76,10 +85,21 @@ export class EventListComponent implements OnInit {
     this.categoryFilter = '';
     this.startDate = null;
     this.endDate = null;
+    this.page = 1;
     this.fetchEvents();
   }
 
   onSearchChange(): void {
+    this.page = 1;
+    this.fetchEvents();
+  }
+
+  changePage(delta: number): void {
+    const newPage = this.page + delta;
+    if (newPage < 1 || (this.total && (newPage - 1) * this.pageSize >= this.total)) {
+      return;
+    }
+    this.page = newPage;
     this.fetchEvents();
   }
 

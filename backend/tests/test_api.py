@@ -215,21 +215,26 @@ class APITestCase(unittest.TestCase):
         )
 
         events = self.client.get("/api/events").json()
-        self.assertEqual([e1["id"], e2["id"]], [e["id"] for e in events])
+        self.assertEqual([e1["id"], e2["id"]], [e["id"] for e in events["items"]])
+        self.assertEqual(events["total"], 2)
 
         search = self.client.get("/api/events", params={"search": "python"}).json()
-        self.assertEqual(len(search), 1)
-        self.assertEqual(search[0]["title"], "Python Workshop")
+        self.assertEqual(search["total"], 1)
+        self.assertEqual(search["items"][0]["title"], "Python Workshop")
 
         category = self.client.get("/api/events", params={"category": "social"}).json()
-        self.assertEqual(len(category), 1)
-        self.assertEqual(category[0]["title"], "Party Night")
+        self.assertEqual(category["total"], 1)
+        self.assertEqual(category["items"][0]["title"], "Party Night")
 
-        start_filter = self.client.get("/api/events", params={"start_date": datetime.now(timezone.utc).date().isoformat()}).json()
-        self.assertGreaterEqual(len(start_filter), 2)
+        start_filter = self.client.get(
+            "/api/events", params={"start_date": datetime.now(timezone.utc).date().isoformat()}
+        ).json()
+        self.assertGreaterEqual(len(start_filter["items"]), 2)
 
-        end_filter = self.client.get("/api/events", params={"end_date": datetime.now(timezone.utc).date().isoformat()}).json()
-        self.assertEqual(len(end_filter), 0)
+        end_filter = self.client.get(
+            "/api/events", params={"end_date": datetime.now(timezone.utc).date().isoformat()}
+        ).json()
+        self.assertEqual(end_filter["total"], 0)
 
     def test_my_events_and_registration_state(self):
         self.make_organizer()
@@ -324,6 +329,40 @@ class APITestCase(unittest.TestCase):
         second = self.client.post(f"/api/events/{event['id']}/register", headers=self.auth_header(student_token))
         self.assertEqual(second.status_code, 400)
         self.assertIn("deja înscris", second.json().get("detail", ""))
+
+    def test_unregister_restores_spot(self):
+        self.make_organizer()
+        organizer_token = self.login("org@test.ro", "organizer123")
+        event = self.client.post(
+            "/api/events",
+            json={
+                "title": "Unregister Test",
+                "description": "Desc",
+                "category": "Cat",
+                "start_time": self.future_time(days=1),
+                "location": "Loc",
+                "max_seats": 1,
+                "tags": [],
+            },
+            headers=self.auth_header(organizer_token),
+        ).json()
+        student_token = self.register_student("stud@test.ro")
+        reg = self.client.post(f"/api/events/{event['id']}/register", headers=self.auth_header(student_token))
+        self.assertEqual(reg.status_code, 201)
+
+        unregister = self.client.delete(f"/api/events/{event['id']}/register", headers=self.auth_header(student_token))
+        self.assertEqual(unregister.status_code, 204)
+
+        # another student can now register
+        other_token = self.register_student("stud2@test.ro")
+        reg2 = self.client.post(f"/api/events/{event['id']}/register", headers=self.auth_header(other_token))
+        self.assertEqual(reg2.status_code, 201)
+
+    def test_upgrade_to_organizer_requires_code(self):
+        student_token = self.register_student("code@test.ro")
+        # missing/invalid code
+        bad = self.client.post("/organizer/upgrade", json={"invite_code": "wrong"}, headers=self.auth_header(student_token))
+        self.assertEqual(bad.status_code, 403)
 
 
 if __name__ == "__main__":
