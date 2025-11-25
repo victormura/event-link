@@ -1,15 +1,27 @@
 // Karma configuration for Angular tests
 module.exports = function (config) {
   config.set({
-    browsers: ['ChromeHeadlessCustom'],
+    browsers: ['ChromeHeadless'],
     customLaunchers: {
-      ChromeHeadlessCustom: {
+      ChromeHeadless: {
         base: 'ChromeHeadless',
         flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
       },
     },
     singleRun: true,
-    reporters: ['progress'],
+    reporters: ['progress', 'coverage'],
+    coverageReporter: {
+      dir: require('path').join(__dirname, './coverage'),
+      reporters: [{ type: 'html' }, { type: 'text-summary' }],
+      check: {
+        global: {
+          statements: 60,
+          branches: 50,
+          functions: 60,
+          lines: 60,
+        },
+      },
+    },
     restartOnFileChange: true,
     logLevel: config.LOG_INFO,
     plugins: [
