@@ -23,9 +23,9 @@
 - [x] Logging: structured logs with request IDs; log key domain events (auth, event CRUD, registrations).
 - [x] Email metrics/counters and optional retry/backoff on SMTP failures.
 - [x] Add organizer ability to export participants including attendance + cover URL in CSV.
-- [ ] Event cover images: add image upload option or validated URL regex; show placeholder on missing/failed load.
-- [ ] Persist filter/query params in event list for shareable links.
-- [ ] Add route-level guard to redirect logged-in users away from login/register.
+- [x] Event cover images: add image upload option or validated URL regex; show placeholder on missing/failed load.
+- [x] Persist filter/query params in event list for shareable links.
+- [x] Add route-level guard to redirect logged-in users away from login/register.
 - [ ] Add frontend loading/error spinners for event details/register actions.
 - [ ] Improve accessibility: form labels/aria, focus states, keyboard nav on filters and pagination.
 - [ ] Password reset flow (request + token + reset form) with backend email template.
