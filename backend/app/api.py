@@ -5,13 +5,26 @@ import time
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlalchemy import func
+from starlette.middleware.base import BaseHTTPMiddleware
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
 
 from . import auth, models, schemas
 from .config import settings
 from .database import engine, get_db
 from .email_service import send_registration_email
+
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers.setdefault("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload")
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        response.headers.setdefault("Permissions-Policy", "geolocation=()")
+        return response
 
 app = FastAPI(title="Event Link API", version="1.0.0")
 
@@ -22,6 +35,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 @app.on_event("startup")
@@ -165,10 +180,6 @@ def upgrade_to_organizer(
 def read_root():
     return {"message": "Hello from Event Link API!"}
 
-
-@app.get("/api/health")
-def health_check():
-    return {"status": "healthy"}
 
 
 @app.exception_handler(HTTPException)
@@ -597,3 +608,11 @@ def recommended_events(
             continue
         filtered.append(_serialize_event(event, seats))
     return filtered[:10]
+
+@app.get("/api/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "ok"}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database unavailable")
