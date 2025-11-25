@@ -3,6 +3,8 @@ import { EventListComponent } from './event-list.component';
 import { EventService } from '../services/event.service';
 import { AuthService } from '../services/auth.service';
 import { of } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { RouterTestingModule } from '@angular/router/testing';
 
 const eventsMock = {
   items: [
@@ -33,10 +35,11 @@ describe('EventListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [EventListComponent],
+      imports: [EventListComponent, RouterTestingModule],
       providers: [
         { provide: EventService, useValue: { listEvents: () => of(eventsMock), recommended: () => of([]) } },
         { provide: AuthService, useValue: { isStudent: () => false, currentUser$: of(null) } },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } },
       ],
     }).compileComponents();
 
