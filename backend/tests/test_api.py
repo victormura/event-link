@@ -236,6 +236,11 @@ class APITestCase(unittest.TestCase):
         ).json()
         self.assertEqual(end_filter["total"], 0)
 
+        paging = self.client.get("/api/events", params={"page_size": 1, "page": 1}).json()
+        self.assertEqual(paging["page_size"], 1)
+        self.assertEqual(len(paging["items"]), 1)
+        self.assertEqual(paging["total"], 2)
+
     def test_event_validation_rules(self):
         self.make_organizer()
         organizer_token = self.login("org@test.ro", "organizer123")
