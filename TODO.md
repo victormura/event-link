@@ -1,10 +1,10 @@
 # TODO (Event Link)
 
 ## High
-- [ ] Add Alembic migrations and replace `AUTO_CREATE_TABLES` in production; generate migration for cover_url/attended columns.
-- [ ] Harden auth: central organizer/student dependency helpers, consistent JWT expiry validation, and rate limit login/register.
-- [ ] Implement global exception/response wrapper for consistent error payloads (code/message) across APIs.
-- [ ] Add organizer invite approval audit trail (store who/when upgraded, not just code).
+- [x] Add Alembic migrations and replace `AUTO_CREATE_TABLES` in production; generate migration for cover_url/attended columns.
+- [x] Harden auth: central organizer/student dependency helpers, consistent JWT expiry validation, and rate limit login/register.
+- [x] Implement global exception/response wrapper for consistent error payloads (code/message) across APIs.
+- [x] Add organizer invite approval audit trail (store who/when upgraded, not just code).
 - [x] Student unregister flow in UI (button state, messages) wired to new DELETE endpoint.
 - [x] Organizer upgrade UI: handle invalid/missing invite code error states with UX copy.
 - [x] Participant attendance toggle: add backend tests and UI loading/error states.
