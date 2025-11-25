@@ -32,8 +32,6 @@ fastapi==0.121.2
     # via event-link-backend (pyproject.toml)
 greenlet==3.2.4
     # via sqlalchemy
-h11==0.14.0
-    # via httpx
 h11==0.16.0
     # via uvicorn
 httpcore==1.0.5
@@ -97,3 +95,4 @@ typing-inspection==0.4.2
     #   pydantic-settings
 uvicorn==0.38.0
     # via event-link-backend (pyproject.toml)
+
