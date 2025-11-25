@@ -24,7 +24,6 @@ export class EventListComponent implements OnInit {
   page = 1;
   pageSize = 10;
   total = 0;
-  Math = Math;
   loading = false;
   errorMessage = '';
 
@@ -90,6 +89,16 @@ export class EventListComponent implements OnInit {
   }
 
   onSearchChange(): void {
+    this.page = 1;
+    this.fetchEvents();
+  }
+
+  get totalPages(): number {
+    return this.pageSize > 0 ? Math.max(1, Math.ceil(this.total / this.pageSize)) : 1;
+  }
+
+  changePageSize(size: number): void {
+    this.pageSize = size;
     this.page = 1;
     this.fetchEvents();
   }

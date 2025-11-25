@@ -53,6 +53,15 @@
     <h3>Toate evenimentele</h3>
     <span class="muted" *ngIf="total">{{ total }} rezultate</span>
   </div>
+  <div class="page-size" *ngIf="total">
+    <label for="pageSize">Rezultate pe pagină</label>
+    <select id="pageSize" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)">
+      <option [ngValue]="5">5</option>
+      <option [ngValue]="10">10</option>
+      <option [ngValue]="20">20</option>
+      <option [ngValue]="50">50</option>
+    </select>
+  </div>
   <div *ngIf="loading" class="empty-state">Se încarcă...</div>
   <div *ngIf="!loading && errorMessage" class="empty-state">{{ errorMessage }}</div>
   <div *ngIf="!loading && !events.length" class="empty-state">Momentan nu sunt evenimente viitoare.</div>
@@ -72,7 +81,7 @@
   </div>
   <div class="pagination" *ngIf="total > pageSize">
     <button class="btn ghost" type="button" (click)="changePage(-1)" [disabled]="page === 1">&larr; Anterioare</button>
-    <span class="muted">Pagina {{ page }} / {{ Math.ceil(total / pageSize) }}</span>
-    <button class="btn ghost" type="button" (click)="changePage(1)" [disabled]="page >= Math.ceil(total / pageSize)">Următoare &rarr;</button>
+    <span class="muted">Pagina {{ page }} / {{ totalPages }}</span>
+    <button class="btn ghost" type="button" (click)="changePage(1)" [disabled]="page >= totalPages">Următoare &rarr;</button>
   </div>
 </section>
