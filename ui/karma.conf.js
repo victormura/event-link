@@ -1,9 +1,9 @@
 // Karma configuration for Angular tests
 module.exports = function (config) {
   config.set({
-    browsers: ['ChromeHeadlessCustom'],
+    browsers: ['ChromeHeadless'],
     customLaunchers: {
-      ChromeHeadlessCustom: {
+      ChromeHeadless: {
         base: 'ChromeHeadless',
         flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
       },
