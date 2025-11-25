@@ -1,6 +1,15 @@
 # TODO (Event Link)
 
 ## High
+- [ ] [EL-3] Student signup: allow students to create an account with email + password so they can register for events.
+- [ ] [EL-4] User login: allow both students and organizers to log into their account securely to use the platform.
+- [ ] [EL-6] Organizer create event form: provide a form for organizers to create and publish new events.
+- [ ] [EL-12] Enforce capacity limits: automatically stop new registrations when an event reaches its maximum number of seats.
+- [ ] [EL-13] Student event list: show a list of all upcoming events on the main page so students stay informed about what’s happening.
+- [ ] [EL-14] Event details page: when a student clicks an event in the list, show a full details page (description, time, organizer, location, etc.).
+- [ ] [EL-15] Event registration button: on the event details page, show an “Enroll / Register” button for logged‑in students to reserve a spot.
+- [ ] [EL-21] Event tags for recommendations: allow organizers to add relevant tags to events so the recommendation engine can match events to interested students.
+- [ ] [EL-22] “Recommended for you” section: show students a personalized list of recommended events based on their registration history.
 - [x] Add Alembic migrations and replace `AUTO_CREATE_TABLES` in production; generate migration for cover_url/attended columns.
 - [x] Harden auth: central organizer/student dependency helpers, consistent JWT expiry validation, and rate limit login/register.
 - [x] Implement global exception/response wrapper for consistent error payloads (code/message) across APIs.
@@ -17,6 +26,11 @@
 - [x] Make sure emailing actually works, and configure it otherwise so that mails are being sent.
 
 ## Medium
+- [ ] [EL-7] Organizer edit event: allow organizers to edit details of events they created (title, description, time, capacity, etc.).
+- [ ] [EL-8] Organizer delete event: allow organizers to delete/cancel an event they created when it will no longer take place.
+- [ ] [EL-9] Organizer event dashboard: provide a page where organizers can see a list of all events they have created for centralized management.
+- [ ] [EL-10] Participant list for organizers: show organizers the list of students registered for one of their events so they can manage attendance.
+- [ ] [EL-16] “My Events” page for students: provide a page where a logged‑in student can see the list of events they are registered for.
 - [x] Docker + docker-compose for backend/frontend/Postgres with env wiring and docs.
 - [x] Security headers middleware (HSTS, X-Content-Type-Options, X-Frame-Options) and CORS audit.
 - [x] Health/readiness endpoint to check DB connectivity for probes.
@@ -26,8 +40,8 @@
 - [x] Event cover images: add image upload option or validated URL regex; show placeholder on missing/failed load.
 - [x] Persist filter/query params in event list for shareable links.
 - [x] Add route-level guard to redirect logged-in users away from login/register.
-- [x] Add frontend loading/error spinners for event details/register actions.
-- [x] Improve accessibility: form labels/aria, focus states, keyboard nav on filters and pagination.
+- [ ] Add frontend loading/error spinners for event details/register actions.
+- [ ] Improve accessibility: form labels/aria, focus states, keyboard nav on filters and pagination.
 - [ ] Password reset flow (request + token + reset form) with backend email template.
 - [ ] Refresh tokens with short-lived access tokens to reduce JWT leak impact.
 - [ ] Per-IP and per-account rate limiting on sensitive endpoints (login, register, password reset).
@@ -46,6 +60,10 @@
 - [ ] CI caching for npm/pip to speed up pipelines and document cache keys.
 
 ## Low
+- [ ] [EL-17] Search events by name: let students search events by title to quickly find something specific.
+- [ ] [EL-18] Filter events by category: allow students to filter events by category (e.g., technical, cultural, sports) to see only relevant events.
+- [ ] [EL-19] Registration confirmation email: send an email notification to students when they successfully register for an event.
+- [ ] [EL-20] Filter events by date/interval: allow students to filter events by a date range to find events that fit their schedule.
 - [ ] Add Prettier/ESLint config and `npm run lint` hook; backend ruff/black + make lint.
 - [ ] Seed data/scripts for local dev (sample users/events with tags/covers).
 - [ ] Add API docs updates for new endpoints (unregister, attendance toggle, organizer upgrade).
