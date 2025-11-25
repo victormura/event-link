@@ -98,3 +98,5 @@ uvicorn==0.38.0
 
 
 
+pytest==8.3.3
+pytest-cov==5.0.0
