@@ -637,7 +637,6 @@ def update_participant_attendance(
 def register_for_event(
     event_id: int,
     background_tasks: BackgroundTasks,
-    request: Request | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.require_student),
     request: Request | None = None,
