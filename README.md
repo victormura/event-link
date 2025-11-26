@@ -135,3 +135,11 @@ Services:
 - Postgres: exposed on ${POSTGRES_PORT:-5432}
 
 Environment overrides come from `.env` (see `.env.example`). The backend runs Alembic migrations on startup before launching Uvicorn.
+
+## Testing
+
+- **Backend unit/integration**: `cd backend && uv run pytest`
+- **Frontend unit**: `cd ui && npm test -- --watch=false --browsers=ChromeHeadless`
+- **Playwright E2E (optional)**: `cd ui && npx playwright install && npm run e2e`
+  - Configure `E2E_BASE_URL` (UI) and optionally `E2E_API_URL` + test credentials to exercise register/unregister flows.
+- **Load tests (k6)**: `K6_BASE_URL=http://localhost:8000 k6 run loadtests/events.js`
