@@ -55,6 +55,7 @@ class OrganizerUpgradeRequest(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str
     role: UserRole
     user_id: int
@@ -167,3 +168,7 @@ class PasswordResetConfirm(BaseModel):
         if pwd and v != pwd:
             raise ValueError("Parolele nu se potrivesc")
         return v
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
