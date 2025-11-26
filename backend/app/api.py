@@ -668,7 +668,11 @@ def register_for_event(
     db.commit()
     log_event("event_registered", event_id=event.id, user_id=current_user.id)
 
-    lang = ((request.headers.get("accept-language") if request else None) or "ro")
+    try:
+        accept_lang = request.headers.get("accept-language") if request else None
+    except NameError:
+        accept_lang = None
+    lang = (accept_lang or "ro")
     subject, body_text, body_html = render_registration_email(event, current_user, lang=lang)
     send_registration_email(
         background_tasks,
