@@ -213,7 +213,7 @@ def _serialize_event(event: models.Event, seats_taken: int) -> schemas.EventResp
 
 @app.post("/register", response_model=schemas.Token)
 def register(user: schemas.StudentRegister, request: Request, db: Session = Depends(get_db)):
-    _enforce_rate_limit(request, "register", identifier=user.email.lower())
+    _enforce_rate_limit("register", request=request, identifier=user.email.lower())
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Acest email este deja folosit.")
@@ -248,7 +248,7 @@ def register(user: schemas.StudentRegister, request: Request, db: Session = Depe
 
 @app.post("/login", response_model=schemas.Token)
 def login(user_credentials: schemas.UserLogin, request: Request, db: Session = Depends(get_db)):
-    _enforce_rate_limit(request, "login", identifier=user_credentials.email.lower())
+    _enforce_rate_limit("login", request=request, identifier=user_credentials.email.lower())
     user = db.query(models.User).filter(models.User.email == user_credentials.email).first()
     if not user or not auth.verify_password(user_credentials.password, user.password_hash):
         log_warning("login_failed", email=user_credentials.email)
@@ -356,8 +356,8 @@ _RATE_LIMIT_STORE: dict[str, list[float]] = {}
 
 
 def _enforce_rate_limit(
-    request: Request | None = None,
     action: str,
+    request: Request | None = None,
     limit: int = 20,
     window_seconds: int = 60,
     identifier: str | None = None,
@@ -688,7 +688,7 @@ def resend_registration_email(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.require_student),
 ):
-    _enforce_rate_limit(request, "resend_registration", identifier=current_user.email.lower(), limit=3, window_seconds=600)
+    _enforce_rate_limit("resend_registration", request=request, identifier=current_user.email.lower(), limit=3, window_seconds=600)
     event = db.query(models.Event).filter(models.Event.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Evenimentul nu există")
@@ -857,7 +857,7 @@ def password_forgot(
     request: Request | None = None,
     db: Session = Depends(get_db),
 ):
-    _enforce_rate_limit(request, "password_forgot", identifier=payload.email.lower(), limit=5, window_seconds=300)
+    _enforce_rate_limit("password_forgot", request=request, identifier=payload.email.lower(), limit=5, window_seconds=300)
     user = db.query(models.User).filter(func.lower(models.User.email) == payload.email.lower()).first()
     if user:
         db.query(models.PasswordResetToken).filter(
@@ -882,7 +882,7 @@ def password_forgot(
 
 @app.post("/password/reset")
 def password_reset(payload: schemas.PasswordResetConfirm, request: Request, db: Session = Depends(get_db)):
-    _enforce_rate_limit(request, "password_reset", limit=10, window_seconds=300)
+    _enforce_rate_limit("password_reset", request=request, limit=10, window_seconds=300)
     token_row = (
         db.query(models.PasswordResetToken)
         .filter(models.PasswordResetToken.token == payload.token, models.PasswordResetToken.used == False)

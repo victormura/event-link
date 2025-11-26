@@ -7,11 +7,11 @@
   <div class="filters-grid">
     <div class="field">
       <label for="searchInput">Caută după titlu</label>
-      <input id="searchInput" type="text" placeholder="ex: workshop" [(ngModel)]="searchText" (input)="onSearchChange()" aria-label="Caută evenimente" />
+      <input id="searchInput" type="text" placeholder="ex: workshop" [(ngModel)]="searchText" (input)="onSearchChange()" [attr.aria-label]="'Caută evenimente'" />
     </div>
     <div class="field">
       <label for="categorySelect">Categorie</label>
-      <select id="categorySelect" [(ngModel)]="categoryFilter" (change)="onFiltersChange()" aria-label="Filtru categorie">
+      <select id="categorySelect" [(ngModel)]="categoryFilter" (change)="onFiltersChange()" [attr.aria-label]="'Filtru categorie'">
         <option value="">Toate</option>
         <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
       </select>
