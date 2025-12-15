@@ -281,17 +281,25 @@ export function EventsPage() {
               <Calendar
                 mode="range"
                 selected={{
-                  from: filters.start_date ? new Date(filters.start_date) : undefined,
-                  to: filters.end_date ? new Date(filters.end_date) : undefined,
+                  from: filters.start_date ? new Date(filters.start_date + 'T00:00:00') : undefined,
+                  to: filters.end_date ? new Date(filters.end_date + 'T00:00:00') : undefined,
                 }}
                 onSelect={(range: { from?: Date; to?: Date } | undefined) => {
+                  // Format date as YYYY-MM-DD without timezone conversion
+                  const formatLocalDate = (date: Date | undefined) => {
+                    if (!date) return '';
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                  };
                   updateFilters({
-                    start_date: range?.from?.toISOString().split('T')[0] || '',
-                    end_date: range?.to?.toISOString().split('T')[0] || '',
+                    start_date: formatLocalDate(range?.from),
+                    end_date: formatLocalDate(range?.to),
                   });
                 }}
                 numberOfMonths={2}
-                defaultMonth={filters.start_date ? new Date(filters.start_date) : new Date()}
+                defaultMonth={filters.start_date ? new Date(filters.start_date + 'T00:00:00') : new Date()}
               />
             </PopoverContent>
           </Popover>

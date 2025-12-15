@@ -5,8 +5,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
-import "react-day-picker/dist/style.css"
-
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
 function Calendar({
@@ -18,7 +16,7 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
-      className={cn("p-3 rdp-custom", className)}
+      className={cn("p-3", className)}
       classNames={{
         months: "flex flex-col sm:flex-row gap-4",
         month: "flex flex-col gap-4",
@@ -40,15 +38,8 @@ function Calendar({
         day: "h-9 w-9 text-center text-sm p-0 relative",
         day_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-9 p-0 font-normal hover:bg-accent hover:text-accent-foreground rounded-md"
+          "h-9 w-9 p-0 font-normal"
         ),
-        selected: "rdp-selected",
-        today: "rdp-today",
-        outside: "rdp-outside",
-        disabled: "rdp-disabled",
-        range_start: "rdp-range_start",
-        range_end: "rdp-range_end", 
-        range_middle: "rdp-range_middle",
         hidden: "invisible",
         ...classNames,
       }}

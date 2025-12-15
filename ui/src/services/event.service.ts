@@ -7,6 +7,9 @@ import type {
   EventFormData,
   ParticipantList,
   OrganizerProfile,
+  Tag,
+  StudentProfile,
+  StudentProfileUpdate,
 } from '../types';
 
 export const eventService = {
@@ -146,6 +149,23 @@ export const eventService = {
 
   async updateOrganizerProfile(data: Partial<OrganizerProfile>): Promise<OrganizerProfile> {
     const response = await api.put<OrganizerProfile>('/api/organizers/me/profile', data);
+    return response.data;
+  },
+
+  // Tags
+  async getAllTags(): Promise<Tag[]> {
+    const response = await api.get<{ items: Tag[] }>('/api/tags');
+    return response.data.items;
+  },
+
+  // Student profile
+  async getStudentProfile(): Promise<StudentProfile> {
+    const response = await api.get<StudentProfile>('/api/me/profile');
+    return response.data;
+  },
+
+  async updateStudentProfile(data: StudentProfileUpdate): Promise<StudentProfile> {
+    const response = await api.put<StudentProfile>('/api/me/profile', data);
     return response.data;
   },
 };

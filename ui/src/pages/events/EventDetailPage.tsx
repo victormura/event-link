@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   User,
   ExternalLink,
+  Copy,
 } from 'lucide-react';
 import { formatDate, cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ export function EventDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isFavoriting, setIsFavoriting] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
   const { toast } = useToast();
   const { isAuthenticated } = useAuth();
 
@@ -172,6 +174,31 @@ export function EventDetailPage() {
   const handleExportCalendar = () => {
     if (!event) return;
     window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/events/${event.id}/ics`);
+  };
+
+  const handleClone = async () => {
+    if (!event) return;
+
+    setIsCloning(true);
+    try {
+      const clonedEvent = await eventService.cloneEvent(event.id);
+      toast({
+        title: 'Eveniment duplicat!',
+        description: 'Vei fi redirecționat către pagina de editare.',
+        variant: 'success' as const,
+      });
+      // Navigate to edit the cloned event
+      navigate(`/organizer/events/${clonedEvent.id}/edit`);
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { detail?: string } } };
+      toast({
+        title: 'Eroare',
+        description: axiosError.response?.data?.detail || 'Nu am putut duplica evenimentul',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCloning(false);
+    }
   };
 
   if (isLoading) {
@@ -331,6 +358,15 @@ export function EventDetailPage() {
                     <Link to={`/organizer/events/${event.id}/participants`}>
                       Vezi participanții
                     </Link>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={handleClone}
+                    disabled={isCloning}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    {isCloning ? 'Se duplică...' : 'Duplică evenimentul'}
                   </Button>
                 </div>
               ) : (

@@ -7,11 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingPage } from '@/components/ui/loading';
 import { useToast } from '@/hooks/use-toast';
-import { Calendar, Clock, History, Search } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Calendar, Clock, History, Search, Plus, Megaphone } from 'lucide-react';
 
 export function MyEventsPage() {
+  const { isOrganizer } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [pastEvents, setPastEvents] = useState<Event[]>([]);
+  const [organizerEvents, setOrganizerEvents] = useState<Event[]>([]);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -43,6 +46,17 @@ export function MyEventsPage() {
 
       setUpcomingEvents(upcoming);
       setPastEvents(past);
+
+      // Load organizer events if user is organizer
+      if (isOrganizer) {
+        const orgEvents = await eventService.getOrganizerEvents();
+        // Sort by date descending (newest first)
+        orgEvents.sort(
+          (a: Event, b: Event) =>
+            new Date(b.start_time).getTime() - new Date(a.start_time).getTime()
+        );
+        setOrganizerEvents(orgEvents);
+      }
     } catch {
       toast({
         title: 'Eroare',
@@ -52,7 +66,7 @@ export function MyEventsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, isOrganizer]);
 
   const loadFavorites = useCallback(async () => {
     try {
@@ -96,14 +110,26 @@ export function MyEventsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Evenimentele Mele</h1>
-        <p className="mt-2 text-muted-foreground">
-          Evenimentele la care te-ai înscris
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Evenimentele Mele</h1>
+          <p className="mt-2 text-muted-foreground">
+            {isOrganizer 
+              ? 'Evenimentele create și cele la care te-ai înscris'
+              : 'Evenimentele la care te-ai înscris'}
+          </p>
+        </div>
+        {isOrganizer && (
+          <Button asChild>
+            <Link to="/organizer/events/new">
+              <Plus className="mr-2 h-4 w-4" />
+              Eveniment Nou
+            </Link>
+          </Button>
+        )}
       </div>
 
-      {upcomingEvents.length === 0 && pastEvents.length === 0 ? (
+      {upcomingEvents.length === 0 && pastEvents.length === 0 && organizerEvents.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="text-lg font-semibold">Nu ești înscris la niciun eveniment</h3>
@@ -118,8 +144,14 @@ export function MyEventsPage() {
           </Button>
         </div>
       ) : (
-        <Tabs defaultValue="upcoming" className="w-full">
+        <Tabs defaultValue={isOrganizer ? "organized" : "upcoming"} className="w-full">
           <TabsList className="mb-6">
+            {isOrganizer && (
+              <TabsTrigger value="organized" className="gap-2">
+                <Megaphone className="h-4 w-4" />
+                Create de mine ({organizerEvents.length})
+              </TabsTrigger>
+            )}
             <TabsTrigger value="upcoming" className="gap-2">
               <Clock className="h-4 w-4" />
               Viitoare ({upcomingEvents.length})
@@ -129,6 +161,38 @@ export function MyEventsPage() {
               Trecute ({pastEvents.length})
             </TabsTrigger>
           </TabsList>
+
+          {isOrganizer && (
+            <TabsContent value="organized">
+              {organizerEvents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <Megaphone className="mb-4 h-12 w-12 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold">Nu ai creat niciun eveniment</h3>
+                  <p className="mt-2 text-muted-foreground">
+                    Creează primul tău eveniment pentru a începe
+                  </p>
+                  <Button asChild className="mt-4">
+                    <Link to="/organizer/events/new">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Creează Eveniment
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {organizerEvents.map((event) => (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      onFavoriteToggle={handleFavoriteToggle}
+                      isFavorite={favorites.has(event.id)}
+                      showEditButton
+                    />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          )}
 
           <TabsContent value="upcoming">
             {upcomingEvents.length === 0 ? (

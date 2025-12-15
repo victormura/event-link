@@ -14,12 +14,14 @@ import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { EventsPage, EventDetailPage } from '@/pages/events';
 import { MyEventsPage } from '@/pages/MyEventsPage';
 import { FavoritesPage } from '@/pages/FavoritesPage';
+import { StudentProfilePage } from '@/pages/profile';
 
 // Organizer pages
 import {
   OrganizerDashboardPage,
   EventFormPage,
   ParticipantsPage,
+  OrganizerProfilePage,
 } from '@/pages/organizer';
 
 // Protected route wrapper
@@ -78,6 +80,7 @@ function AppRoutes() {
       <Route element={<Layout />}>
         <Route path="/" element={<EventsPage />} />
         <Route path="/events/:id" element={<EventDetailPage />} />
+        <Route path="/organizers/:id" element={<OrganizerProfilePage />} />
         
         {/* Protected routes */}
         <Route
@@ -93,6 +96,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <FavoritesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <StudentProfilePage />
             </ProtectedRoute>
           }
         />

@@ -3,14 +3,16 @@ import type { Event } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, MapPin, Users, Heart, Sparkles } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users, Heart, Sparkles, Pencil } from 'lucide-react';
 import { formatDate, formatTime, cn } from '@/lib/utils';
 
-interface EventCardProps {
+export interface EventCardProps {
   event: Event;
   onFavoriteToggle?: (eventId: number, isFavorite: boolean) => void;
   isFavorite?: boolean;
   showRecommendation?: boolean;
+  isPast?: boolean;
+  showEditButton?: boolean;
 }
 
 export function EventCard({
@@ -18,6 +20,8 @@ export function EventCard({
   onFavoriteToggle,
   isFavorite = false,
   showRecommendation = false,
+  isPast = false,
+  showEditButton = false,
 }: EventCardProps) {
   const availableSeats = event.max_seats ? event.max_seats - event.seats_taken : null;
   const isFull = availableSeats !== null && availableSeats <= 0;
@@ -29,7 +33,10 @@ export function EventCard({
   };
 
   return (
-    <Card className="group overflow-hidden transition-all hover:shadow-lg">
+    <Card className={cn(
+      "group overflow-hidden transition-all hover:shadow-lg",
+      isPast && "opacity-75"
+    )}>
       <Link to={`/events/${event.id}`}>
         {/* Cover Image */}
         <div className="relative aspect-video overflow-hidden bg-muted">
@@ -37,7 +44,10 @@ export function EventCard({
             <img
               src={event.cover_url}
               alt={event.title}
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              className={cn(
+                "h-full w-full object-cover transition-transform group-hover:scale-105",
+                isPast && "grayscale-[30%]"
+              )}
               onError={(e) => {
                 (e.target as HTMLImageElement).src =
                   'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop';
@@ -51,10 +61,13 @@ export function EventCard({
 
           {/* Status Badges */}
           <div className="absolute left-2 top-2 flex flex-wrap gap-1">
+            {isPast && (
+              <Badge variant="secondary">Încheiat</Badge>
+            )}
             {event.status === 'draft' && (
               <Badge variant="secondary">Draft</Badge>
             )}
-            {isFull && (
+            {isFull && !isPast && (
               <Badge variant="destructive">Complet</Badge>
             )}
           </div>
@@ -71,6 +84,22 @@ export function EventCard({
               onClick={handleFavoriteClick}
             >
               <Heart className={cn('h-5 w-5', isFavorite && 'fill-current')} />
+            </Button>
+          )}
+
+          {/* Edit Button */}
+          {showEditButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-2 bottom-2 bg-background/80 backdrop-blur-sm hover:bg-background"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = `/organizer/events/${event.id}/edit`;
+              }}
+            >
+              <Pencil className="h-4 w-4" />
             </Button>
           )}
         </div>

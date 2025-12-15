@@ -76,6 +76,18 @@ export interface OrganizerProfile {
   events: Event[];
 }
 
+export interface StudentProfile {
+  user_id: number;
+  email: string;
+  full_name?: string;
+  interest_tags: Tag[];
+}
+
+export interface StudentProfileUpdate {
+  full_name?: string;
+  interest_tag_ids?: number[];
+}
+
 export interface AuthToken {
   access_token: string;
   refresh_token?: string;
