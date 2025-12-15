@@ -428,7 +428,7 @@ def get_events(
         query = query.filter(models.Event.start_time <= end_dt)
     query = query.distinct(models.Event.id)
     total = query.count()
-    query = query.order_by(models.Event.start_time)
+    query = query.order_by(models.Event.id, models.Event.start_time)
     query, seats_subquery = _events_with_counts_query(db, query)
     query = query.offset((page - 1) * page_size).limit(page_size)
     events = query.all()
