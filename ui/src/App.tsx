@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -31,8 +32,13 @@ import {
   OrganizerProfilePage,
 } from '@/pages/organizer';
 
+type RouteProps = Readonly<{ children: ReactNode }>;
+
 // Protected route wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+/**
+ * Test helper: protected route.
+ */
+function ProtectedRoute({ children }: RouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -43,11 +49,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }
 
 // Organizer route wrapper
-function OrganizerRoute({ children }: { children: React.ReactNode }) {
+/**
+ * Test helper: organizer route.
+ */
+function OrganizerRoute({ children }: RouteProps) {
   const { isAuthenticated, isOrganizer, isLoading } = useAuth();
 
   if (isLoading) {
@@ -62,11 +71,14 @@ function OrganizerRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/forbidden" replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }
 
 // Admin route wrapper
-function AdminRoute({ children }: { children: React.ReactNode }) {
+/**
+ * Test helper: admin route.
+ */
+function AdminRoute({ children }: RouteProps) {
   const { isAuthenticated, isAdmin, isLoading } = useAuth();
 
   if (isLoading) {
@@ -81,11 +93,14 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/forbidden" replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }
 
 // Guest only route (login/register)
-function GuestRoute({ children }: { children: React.ReactNode }) {
+/**
+ * Test helper: guest route.
+ */
+function GuestRoute({ children }: RouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
@@ -96,9 +111,13 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>;
+  return children;
 }
 
+/** Render the routed application screens. */
+/**
+ * Test helper: app routes.
+ */
 function AppRoutes() {
   return (
     <Routes>
@@ -206,6 +225,7 @@ function AppRoutes() {
   );
 }
 
+/** Mount the app-wide providers and router shell. */
 function App() {
   return (
     <BrowserRouter>

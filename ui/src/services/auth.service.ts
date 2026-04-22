@@ -57,6 +57,8 @@ export const authService = {
     localStorage.setItem('access_token', data.access_token);
     if (data.refresh_token) {
       localStorage.setItem('refresh_token', data.refresh_token);
+    } else {
+      localStorage.removeItem('refresh_token');
     }
     localStorage.setItem('user', JSON.stringify({
       id: data.user_id,
@@ -71,7 +73,7 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('access_token');
+    return localStorage.getItem('access_token') !== null;
   },
 
   getStoredUser(): { id: number; role: string } | null {

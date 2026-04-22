@@ -1,3 +1,10 @@
+"""Shared pytest fixtures for this test scope."""
+
+# Alembic injects ``command`` / ``config`` dynamically, so Pylint can't
+# resolve them. Declared at the top of the file so the imports below are
+# covered by the disable.
+# pylint: disable=no-name-in-module
+
 import os
 from pathlib import Path
 
@@ -5,8 +12,6 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
-from sqlalchemy import text
-
 
 if os.environ.get("RUN_INTEGRATION_TESTS") != "1":
     pytest.skip(
@@ -15,17 +20,23 @@ if os.environ.get("RUN_INTEGRATION_TESTS") != "1":
     )
 
 if not os.environ.get("DATABASE_URL"):
-    pytest.skip("DATABASE_URL must be set for integration tests.", allow_module_level=True)
+    pytest.skip(
+        "DATABASE_URL must be set for integration tests.", allow_module_level=True
+    )
 
-os.environ.setdefault("SECRET_KEY", "integration-test-secret")
+os.environ.setdefault("SECRET_KEY", "integration-signing-key-material-123456")
 os.environ.setdefault("EMAIL_ENABLED", "false")
 
+# Env setup above must happen before app-module imports settings.
+# pylint: disable=wrong-import-position,no-name-in-module
 from app import auth, models  # noqa: E402
 from app.api import app  # noqa: E402
 from app.database import Base, SessionLocal, engine, get_db  # noqa: E402
+from fixture_helpers import build_test_helpers  # noqa: E402
 
 
 def _run_migrations() -> None:
+    """Runs the migrations helper path."""
     backend_root = Path(__file__).resolve().parents[1]
     alembic_ini = backend_root / "alembic.ini"
     config = Config(str(alembic_ini))
@@ -35,6 +46,7 @@ def _run_migrations() -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def _ensure_schema():
+    """Ensures schema is satisfied."""
     _run_migrations()
     yield
     Base.metadata.drop_all(bind=engine)
@@ -42,12 +54,12 @@ def _ensure_schema():
 
 @pytest.fixture()
 def db_session():
+    """Implements the db session helper."""
     db = SessionLocal()
     try:
-        tables = [t.name for t in Base.metadata.sorted_tables]
-        if tables:
-            db.execute(text(f"TRUNCATE TABLE {', '.join(tables)} RESTART IDENTITY CASCADE"))
-            db.commit()
+        for table in reversed(Base.metadata.sorted_tables):
+            db.execute(table.delete())
+        db.commit()
         yield db
     finally:
         db.close()
@@ -55,7 +67,10 @@ def db_session():
 
 @pytest.fixture()
 def client(db_session):
+    """Implements the client helper."""
+
     def _override_get_db():
+        """Implements the override get db helper."""
         yield db_session
 
     app.dependency_overrides[get_db] = _override_get_db
@@ -66,37 +81,11 @@ def client(db_session):
 
 @pytest.fixture()
 def helpers(client, db_session):
-    def register_student(email: str) -> str:
-        resp = client.post(
-            "/register",
-            json={"email": email, "password": "password123", "confirm_password": "password123"},
-        )
-        assert resp.status_code == 200
-        return resp.json()["access_token"]
-
-    def login(email: str, password: str) -> str:
-        resp = client.post("/login", json={"email": email, "password": password})
-        assert resp.status_code == 200
-        return resp.json()["access_token"]
-
-    def make_organizer(email: str = "org@test.ro", password: str = "organizer123") -> None:
-        organizer = models.User(
-            email=email,
-            password_hash=auth.get_password_hash(password),
-            role=models.UserRole.organizator,
-        )
-        db_session.add(organizer)
-        db_session.commit()
-
-    def auth_header(token: str) -> dict:
-        return {"Authorization": f"Bearer {token}"}
-
-    return {
-        "client": client,
-        "db": db_session,
-        "register_student": register_student,
-        "login": login,
-        "make_organizer": make_organizer,
-        "auth_header": auth_header,
-    }
-
+    """Implements the helpers helper."""
+    return build_test_helpers(
+        client=client,
+        db_session=db_session,
+        auth_module=auth,
+        models_module=models,
+        include_future_time=False,
+    )

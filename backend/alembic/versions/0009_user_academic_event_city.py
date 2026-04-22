@@ -5,9 +5,12 @@ Revises: 0008_add_theme_preference
 Create Date: 2025-12-18
 """
 
+# Alembic revision variables (revision, down_revision, branch_labels,
+# depends_on) are framework-mandated names.
+# pylint: disable=invalid-name,no-name-in-module
+
 from alembic import op
 import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision = "0009_user_academic_event_city"
@@ -17,10 +20,15 @@ depends_on = None
 
 
 def upgrade() -> None:
+    """Apply user academic fields and event-city changes."""
     op.add_column("users", sa.Column("city", sa.String(length=100), nullable=True))
-    op.add_column("users", sa.Column("university", sa.String(length=255), nullable=True))
+    op.add_column(
+        "users", sa.Column("university", sa.String(length=255), nullable=True)
+    )
     op.add_column("users", sa.Column("faculty", sa.String(length=255), nullable=True))
-    op.add_column("users", sa.Column("study_level", sa.String(length=20), nullable=True))
+    op.add_column(
+        "users", sa.Column("study_level", sa.String(length=20), nullable=True)
+    )
     op.add_column("users", sa.Column("study_year", sa.Integer(), nullable=True))
 
     op.add_column("events", sa.Column("city", sa.String(length=100), nullable=True))
@@ -28,6 +36,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    """Revert user academic fields and event-city changes."""
     op.drop_index("ix_events_city", table_name="events")
     op.drop_column("events", "city")
 

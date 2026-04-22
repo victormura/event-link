@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import path from 'path'
+import path from 'node:path'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -22,15 +22,15 @@ export default defineConfig({
     exclude: ['e2e/**', 'node_modules/**', 'dist/**', 'coverage/**'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json-summary', 'lcov'],
+      reporter: ['text', 'json-summary', 'lcov', 'cobertura'],
       reportsDirectory: './coverage',
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.d.ts', 'src/types/**', 'tests/**', '**/*.test.*', '**/*.spec.*'],
       thresholds: {
-        lines: 5,
-        functions: 5,
-        branches: 2,
-        statements: 5,
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
       },
     },
   },

@@ -5,20 +5,22 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   backend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Cache pip
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/pip
           key: pip-${{ hashFiles('backend/requirements.txt') }}
@@ -28,27 +30,36 @@ jobs:
         run: |
           cd backend
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt lizard
       - name: Run backend tests
         run: |
           cd backend
-          pytest --cov-report=xml:coverage.xml --cov-fail-under=70
+          pytest --cov-report=xml:coverage.xml --cov-fail-under=100
       - name: Upload backend coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: backend-coverage
           path: backend/coverage.xml
           if-no-files-found: error
+      - name: Upload backend coverage to Codecov
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
+        with:
+          files: backend/coverage.xml
+          flags: backend
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('ui/package-lock.json') }}
@@ -63,14 +74,23 @@ jobs:
           cd ui
           npm test
       - name: Upload frontend coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: frontend-coverage
           path: ui/coverage
           if-no-files-found: error
+      - name: Upload frontend coverage to Codecov
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
+        with:
+          files: ui/coverage/lcov.info,ui/coverage/cobertura-coverage.xml
+          flags: ui
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   backend-integration:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     services:
       postgres:
         image: postgres:15-alpine
@@ -86,12 +106,12 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.11'
       - name: Cache pip
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.cache/pip
           key: pip-${{ hashFiles('backend/requirements.txt') }}
@@ -104,18 +124,33 @@ jobs:
           pip install -r requirements.txt
       - name: Run Postgres integration tests
         env:
-          DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5432/eventlink_test
-          SECRET_KEY: integration-test-secret
+          DATABASE_URL: ${{ secrets.CI_TEST_DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.CI_TEST_SECRET_KEY }}
           EMAIL_ENABLED: "false"
           RUN_INTEGRATION_TESTS: "1"
         run: |
           cd backend
-          pytest integration_tests
+          pytest integration_tests --cov=app --cov-report=xml:coverage-integration.xml
+      - name: Upload integration coverage
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: backend-integration-coverage
+          path: backend/coverage-integration.xml
+          if-no-files-found: error
+      - name: Upload integration coverage to Codecov
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
+        with:
+          files: backend/coverage-integration.xml
+          flags: backend-integration
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   docker-compose:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Prepare env
         run: |
           # docker-compose.yml loads .env into the backend container
@@ -156,13 +191,15 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '20'
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('ui/package-lock.json') }}
@@ -214,7 +251,7 @@ jobs:
           npm run test:e2e
       - name: Upload Playwright report
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: playwright-report
           path: |
@@ -230,3 +267,5 @@ jobs:
         if: always()
         run: |
           docker compose down -v
+
+

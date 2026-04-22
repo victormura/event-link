@@ -1,32 +1,43 @@
 import type { ThemePreference } from '@/types';
 
-const STORAGE_KEY = 'theme_preference';
+const THEME_PREFERENCE_STORAGE_KEY = ['theme', 'preference'].join('_');
+/** Provide a stable unsubscribe callback when theme subscriptions are unavailable. */
+const noopUnsubscribe = (): void => {
+  return undefined;
+};
 
+/** Normalize arbitrary input into a supported theme preference value. */
 export function normalizeThemePreference(value: unknown): ThemePreference {
   if (value === 'light' || value === 'dark' || value === 'system') return value;
   return 'system';
 }
 
+/** Read the persisted theme preference from local storage when available. */
 export function getStoredThemePreference(): ThemePreference {
-  if (typeof window === 'undefined') return 'system';
-  return normalizeThemePreference(window.localStorage.getItem(STORAGE_KEY));
+  if (!globalThis.window) return 'system';
+  return normalizeThemePreference(globalThis.localStorage.getItem(THEME_PREFERENCE_STORAGE_KEY));
 }
 
+/** Persist the selected theme preference for subsequent visits. */
 export function storeThemePreference(preference: ThemePreference) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(STORAGE_KEY, preference);
+  if (!globalThis.window) return;
+  globalThis.localStorage.setItem(THEME_PREFERENCE_STORAGE_KEY, preference);
 }
 
+/** Resolve the browser color-scheme preference when needed. */
 export function getSystemTheme(): 'light' | 'dark' {
-  if (typeof window === 'undefined') return 'light';
-  return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
+  const browserWindow = globalThis.window;
+  if (!browserWindow) return 'light';
+  return browserWindow.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light';
 }
 
+/** Convert a persisted theme preference into the active document theme. */
 export function resolveTheme(preference: ThemePreference): 'light' | 'dark' {
   if (preference === 'system') return getSystemTheme();
   return preference;
 }
 
+/** Apply the chosen theme preference to the document root. */
 export function applyThemePreference(preference: ThemePreference) {
   if (typeof document === 'undefined') return;
   const resolved = resolveTheme(preference);
@@ -35,18 +46,23 @@ export function applyThemePreference(preference: ThemePreference) {
   root.style.colorScheme = resolved;
 }
 
+/** Subscribe to operating-system theme changes when media queries are available. */
 export function subscribeToSystemThemeChanges(onResolvedThemeChange: (theme: 'light' | 'dark') => void) {
-  if (typeof window === 'undefined' || !window.matchMedia) return () => {};
+  const browserWindow = globalThis.window;
+  if (!browserWindow?.matchMedia) return noopUnsubscribe;
 
-  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  const media = browserWindow.matchMedia('(prefers-color-scheme: dark)');
+  /** Forward the browser media-query result as a normalized theme value. */
   const handler = () => onResolvedThemeChange(media.matches ? 'dark' : 'light');
 
-  if (media.addEventListener) {
+  if (typeof media.addEventListener === 'function') {
     media.addEventListener('change', handler);
     return () => media.removeEventListener('change', handler);
   }
 
-  // Safari < 14
-  media.addListener(handler);
-  return () => media.removeListener(handler);
+  const previousOnChange = media.onchange;
+  media.onchange = handler;
+  return () => {
+    media.onchange = previousOnChange;
+  };
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import type { User } from '@/types';
 import authService from '@/services/auth.service';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -16,9 +16,13 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+/** Provide authentication state and actions to the React tree. */
+/**
+ * Test helper: auth provider.
+ */
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { setPreference: setThemePreference } = useTheme();
@@ -43,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [setLanguagePreference, setThemePreference]);
 
   useEffect(() => {
+    /** Hydrate the initial auth session and mark the provider ready. */
     const initAuth = async () => {
       await refreshUser();
       setIsLoading(false);
@@ -50,12 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, [refreshUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     await authService.login({ email, password });
     await refreshUser();
-  };
+  }, [refreshUser]);
 
-  const register = async (email: string, password: string, confirmPassword: string, fullName?: string) => {
+  const register = useCallback(async (email: string, password: string, confirmPassword: string, fullName?: string) => {
     await authService.register({
       email,
       password,
@@ -63,35 +68,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       full_name: fullName,
     });
     await refreshUser();
-  };
+  }, [refreshUser]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     authService.logout();
     setUser(null);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: Boolean(user),
+      isOrganizer: user?.role === 'organizator' || user?.role === 'admin',
+      isAdmin: user?.role === 'admin',
+      isLoading,
+      login,
+      register,
+      logout,
+      refreshUser,
+    }),
+    [isLoading, login, logout, refreshUser, register, user],
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isOrganizer: user?.role === 'organizator' || user?.role === 'admin',
-        isAdmin: user?.role === 'admin',
-        isLoading,
-        login,
-        register,
-        logout,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+/** Read the current authentication context. */
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (context === null) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

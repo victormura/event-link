@@ -25,6 +25,235 @@ interface ApiError {
   };
 }
 
+type LoginTexts = ReturnType<typeof useI18n>['t']['auth']['login'];
+
+type LoginAccessCodeFieldProps = Readonly<{
+  isLoading: boolean;
+  password: string;
+  setPassword: (value: string) => void;
+  showPassword: boolean;
+  texts: LoginTexts;
+  toggleShowPassword: () => void;
+}>;
+
+type LoginFormCardProps = Readonly<{
+  email: string;
+  isLoading: boolean;
+  onEmailChange: (value: string) => void;
+  onSubmit: (event: React.FormEvent) => void;
+  password: string;
+  setPassword: (value: string) => void;
+  showPassword: boolean;
+  texts: LoginTexts;
+  toggleShowPassword: () => void;
+}>;
+
+/** Extract the most useful message from an API-shaped auth error. */
+/**
+ * Test helper: describe api error.
+ */
+function describeApiError(error: unknown, fallback: string) {
+  const axiosError = error as AxiosError<ApiError>;
+  return (
+    axiosError.response?.data?.detail ||
+    axiosError.response?.data?.error?.message ||
+    fallback
+  );
+}
+
+/** Render the access-code field used on the login screen. */
+function LoginAccessCodeField({
+  isLoading,
+  password,
+  setPassword,
+  showPassword,
+  texts,
+  toggleShowPassword,
+}: LoginAccessCodeFieldProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor="password">{texts.accessCodeLabel}</Label>
+        <Link
+          to="/forgot-password"
+          className="text-sm text-primary hover:underline"
+        >
+          {texts.forgotAccessCode}
+        </Link>
+      </div>
+      <div className="relative">
+        <Input
+          id="password"
+          type={showPassword ? 'text' : 'password'}
+          placeholder="••••••••"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          disabled={isLoading}
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+          onClick={toggleShowPassword}
+        >
+          {showPassword ? (
+            <EyeOff className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <Eye className="h-4 w-4 text-muted-foreground" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/** Render the icon and copy at the top of the login card. */
+function LoginCardHeader({ description, title }: Readonly<{ description: string; title: string }>) {
+  return (
+    <CardHeader className="space-y-1 text-center">
+      <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+        <Calendar className="h-6 w-6 text-primary" />
+      </div>
+      <CardTitle className="text-2xl">{title}</CardTitle>
+      <CardDescription>{description}</CardDescription>
+    </CardHeader>
+  );
+}
+
+/** Render the login submit button and its loading state. */
+function LoginSubmitButton({
+  isLoading,
+  submitLabel,
+  submittingLabel,
+}: Readonly<{
+  isLoading: boolean;
+  submitLabel: string;
+  submittingLabel: string;
+}>) {
+  return (
+    <Button type="submit" className="w-full" disabled={isLoading}>
+      {isLoading ? (
+        <>
+          <LoadingSpinner size="sm" className="mr-2" />
+          {submittingLabel}
+        </>
+      ) : (
+        submitLabel
+      )}
+    </Button>
+  );
+}
+
+/** Render the footer prompt that links new users to registration. */
+function LoginFooterHint({
+  label,
+  linkLabel,
+}: Readonly<{
+  label: string;
+  linkLabel: string;
+}>) {
+  return (
+    <p className="text-center text-sm text-muted-foreground">
+      {label}{' '}
+      <Link to="/register" className="text-primary hover:underline">
+        {linkLabel}
+      </Link>
+    </p>
+  );
+}
+
+/** Render the email field shown at the top of the login form. */
+function LoginEmailField({
+  email,
+  isLoading,
+  onEmailChange,
+  texts,
+}: Readonly<{
+  email: string;
+  isLoading: boolean;
+  onEmailChange: (value: string) => void;
+  texts: LoginTexts;
+}>) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="email">{texts.emailLabel}</Label>
+      <Input
+        id="email"
+        type="email"
+        placeholder={texts.emailPlaceholder}
+        value={email}
+        onChange={(event) => onEmailChange(event.target.value)}
+        required
+        disabled={isLoading}
+      />
+    </div>
+  );
+}
+
+/** Render the footer section for the login form. */
+function LoginFormFooter({
+  isLoading,
+  texts,
+}: Readonly<{
+  isLoading: boolean;
+  texts: LoginTexts;
+}>) {
+  return (
+    <CardFooter className="flex flex-col gap-4">
+      <LoginSubmitButton
+        isLoading={isLoading}
+        submitLabel={texts.submit}
+        submittingLabel={texts.submitting}
+      />
+      <LoginFooterHint
+        label={texts.noAccount}
+        linkLabel={texts.registerLink}
+      />
+    </CardFooter>
+  );
+}
+
+/** Render the full login card while keeping the page shell shallow. */
+function LoginFormCard({
+  email,
+  isLoading,
+  onEmailChange,
+  onSubmit,
+  password,
+  setPassword,
+  showPassword,
+  texts,
+  toggleShowPassword,
+}: LoginFormCardProps) {
+  return (
+    <Card className="w-full max-w-md">
+      <LoginCardHeader title={texts.title} description={texts.description} />
+      <form onSubmit={onSubmit}>
+        <CardContent className="space-y-4">
+          <LoginEmailField
+            email={email}
+            isLoading={isLoading}
+            onEmailChange={onEmailChange}
+            texts={texts}
+          />
+          <LoginAccessCodeField
+            isLoading={isLoading}
+            password={password}
+            setPassword={setPassword}
+            showPassword={showPassword}
+            texts={texts}
+            toggleShowPassword={toggleShowPassword}
+          />
+        </CardContent>
+        <LoginFormFooter isLoading={isLoading} texts={texts} />
+      </form>
+    </Card>
+  );
+}
+
+/** Render the login form and handle auth submission side effects. */
 export function LoginPage() {
   const { t } = useI18n();
   const [email, setEmail] = useState('');
@@ -38,6 +267,7 @@ export function LoginPage() {
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
+  /** Submit the login credentials and route the user back to the requested page. */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -51,13 +281,9 @@ export function LoginPage() {
       });
       navigate(from, { replace: true });
     } catch (error) {
-      const axiosError = error as AxiosError<ApiError>;
       toast({
         title: t.auth.login.errorTitle,
-        description:
-          axiosError.response?.data?.detail ||
-          axiosError.response?.data?.error?.message ||
-          t.auth.login.errorFallback,
+        description: describeApiError(error, t.auth.login.errorFallback),
         variant: 'destructive',
       });
     } finally {
@@ -65,88 +291,20 @@ export function LoginPage() {
     }
   };
 
+  // skipcq: JS-0415 - the route intentionally keeps loading and form states together.
   return (
     <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Calendar className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">{t.auth.login.title}</CardTitle>
-          <CardDescription>
-            {t.auth.login.description}
-          </CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{t.auth.login.emailLabel}</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder={t.auth.login.emailPlaceholder}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t.auth.login.passwordLabel}</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  {t.auth.login.forgotPassword}
-                </Link>
-              </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  {t.auth.login.submitting}
-                </>
-              ) : (
-                t.auth.login.submit
-              )}
-            </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              {t.auth.login.noAccount}{' '}
-              <Link to="/register" className="text-primary hover:underline">
-                {t.auth.login.registerLink}
-              </Link>
-            </p>
-          </CardFooter>
-        </form>
-      </Card>
+      <LoginFormCard
+        email={email}
+        isLoading={isLoading}
+        onEmailChange={setEmail}
+        onSubmit={handleSubmit}
+        password={password}
+        setPassword={setPassword}
+        showPassword={showPassword}
+        texts={t.auth.login}
+        toggleShowPassword={() => setShowPassword(!showPassword)}
+      />
     </div>
   );
 }

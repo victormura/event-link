@@ -5,10 +5,13 @@ Revises:
 Create Date: 2025-12-17
 """
 
+# Alembic revision variables (revision, down_revision, branch_labels,
+# depends_on) are framework-mandated names.
+# pylint: disable=invalid-name,no-name-in-module
+
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-
 
 # revision identifiers, used by Alembic.
 revision = "0000_initial_schema"
@@ -18,10 +21,13 @@ depends_on = None
 
 
 def upgrade() -> None:
+    """Apply the initial schema migration."""
     bind = op.get_bind()
 
     if bind.dialect.name == "postgresql":
-        user_role_enum = postgresql.ENUM("student", "organizator", name="userrole", create_type=False)
+        user_role_enum = postgresql.ENUM(
+            "student", "organizator", name="userrole", create_type=False
+        )
         user_role_enum.create(bind, checkfirst=True)
     else:
         user_role_enum = sa.Enum("student", "organizator", name="userrole")
@@ -54,26 +60,47 @@ def upgrade() -> None:
         sa.Column("location", sa.String(length=255), nullable=True),
         sa.Column("max_seats", sa.Integer(), nullable=True),
         sa.Column("owner_id", sa.Integer(), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("created_at", sa.TIMESTAMP(timezone=True), server_default=sa.text("now()"), nullable=True),
+        sa.Column(
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
+        ),
     )
 
     op.create_table(
         "registrations",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("events.id"), nullable=False),
-        sa.Column("registration_time", sa.TIMESTAMP(timezone=True), server_default=sa.text("now()"), nullable=True),
+        sa.Column(
+            "event_id",
+            sa.Integer(),
+            sa.ForeignKey("events.id"),
+            nullable=False,
+        ),
+        sa.Column(
+            "registration_time",
+            sa.TIMESTAMP(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
+        ),
         sa.UniqueConstraint("user_id", "event_id", name="uq_registration"),
     )
 
     op.create_table(
         "event_tags",
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("events.id"), primary_key=True),
+        sa.Column(
+            "event_id",
+            sa.Integer(),
+            sa.ForeignKey("events.id"),
+            primary_key=True,
+        ),
         sa.Column("tag_id", sa.Integer(), sa.ForeignKey("tags.id"), primary_key=True),
     )
 
 
 def downgrade() -> None:
+    """Revert the initial schema migration."""
     op.drop_table("event_tags")
     op.drop_table("registrations")
     op.drop_table("events")

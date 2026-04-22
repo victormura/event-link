@@ -1,3 +1,5 @@
+"""Task queue worker entrypoint."""
+
 from __future__ import annotations
 
 import os
@@ -8,20 +10,28 @@ import time
 from .config import settings
 from .database import SessionLocal
 from .logging_utils import configure_logging, log_event, log_warning
-from .task_queue import claim_next_job, idle_sleep, process_job, requeue_stale_jobs
+from .task_queue import (
+    claim_next_job,
+    idle_sleep,
+    process_job,
+    requeue_stale_jobs,
+)
 
 
 def _default_worker_id() -> str:
+    """Build a default worker identifier from host and process id."""
     return f"{socket.gethostname()}:{os.getpid()}"
 
 
 def main() -> None:
+    """Run the background worker loop until a shutdown signal arrives."""
     configure_logging()
 
     worker_id = os.getenv("WORKER_ID") or _default_worker_id()
     shutdown_requested = False
 
     def _handle_signal(signum, _frame):  # noqa: ANN001
+        """Request a graceful shutdown after receiving a process signal."""
         nonlocal shutdown_requested
         shutdown_requested = True
         log_warning("worker_shutdown_requested", worker_id=worker_id, signal=signum)
@@ -58,6 +68,10 @@ def main() -> None:
     log_event("worker_stopped", worker_id=worker_id)
 
 
-if __name__ == "__main__":
-    main()
+def _maybe_run_main(module_name: str) -> None:
+    """Run the worker only when the module is executed as a script."""
+    if module_name == "__main__":
+        main()
 
+
+_maybe_run_main(__name__)

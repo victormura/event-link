@@ -1,3 +1,5 @@
+"""Tests for the notifications behavior."""
+
 from datetime import datetime, timezone
 
 from app import models
@@ -10,6 +12,7 @@ from app.task_queue import (
 
 
 def test_notification_preferences_get_and_update(client, helpers):
+    """Verifies notification preferences get and update behavior."""
     token = helpers["register_student"]("student-notif@test.ro")
     headers = helpers["auth_header"](token)
 
@@ -29,8 +32,9 @@ def test_notification_preferences_get_and_update(client, helpers):
 
 
 def test_weekly_digest_job_enqueues_send_email_and_is_idempotent(client, helpers):
+    """Verifies weekly digest job enqueues send email and is idempotent behavior."""
     helpers["make_organizer"]("org@test.ro")
-    org_token = helpers["login"]("org@test.ro", "organizer123")
+    org_token = helpers["login"]("org@test.ro", "organizer-fixture-A1")
     resp = client.post(
         "/api/events",
         headers=helpers["auth_header"](org_token),
@@ -48,9 +52,13 @@ def test_weekly_digest_job_enqueues_send_email_and_is_idempotent(client, helpers
     assert resp.status_code == 201
     event_id = resp.json()["id"]
 
-    student_token = helpers["register_student"]("student-digest@test.ro")
+    helpers["register_student"]("student-digest@test.ro")
     db = helpers["db"]
-    user = db.query(models.User).filter(models.User.email == "student-digest@test.ro").first()
+    user = (
+        db.query(models.User)
+        .filter(models.User.email == "student-digest@test.ro")
+        .first()
+    )
     assert user is not None
     user.email_digest_enabled = True
     user.language_preference = "en"
@@ -73,16 +81,27 @@ def test_weekly_digest_job_enqueues_send_email_and_is_idempotent(client, helpers
     job = enqueue_job(db, JOB_TYPE_SEND_WEEKLY_DIGEST, {"top_n": 5})
     process_job(db, job)
 
-    queued_emails = db.query(models.BackgroundJob).filter(models.BackgroundJob.job_type == JOB_TYPE_SEND_EMAIL).all()
+    queued_emails = (
+        db.query(models.BackgroundJob)
+        .filter(models.BackgroundJob.job_type == JOB_TYPE_SEND_EMAIL)
+        .all()
+    )
     assert len(queued_emails) == 1
 
-    deliveries = db.query(models.NotificationDelivery).filter(models.NotificationDelivery.user_id == int(user.id)).all()
+    deliveries = (
+        db.query(models.NotificationDelivery)
+        .filter(models.NotificationDelivery.user_id == int(user.id))
+        .all()
+    )
     assert len(deliveries) == 1
 
     # Run again: should not enqueue another email due to dedupe key
     job2 = enqueue_job(db, JOB_TYPE_SEND_WEEKLY_DIGEST, {"top_n": 5})
     process_job(db, job2)
 
-    queued_emails2 = db.query(models.BackgroundJob).filter(models.BackgroundJob.job_type == JOB_TYPE_SEND_EMAIL).all()
+    queued_emails2 = (
+        db.query(models.BackgroundJob)
+        .filter(models.BackgroundJob.job_type == JOB_TYPE_SEND_EMAIL)
+        .all()
+    )
     assert len(queued_emails2) == 1
-

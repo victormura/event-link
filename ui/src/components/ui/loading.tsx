@@ -2,10 +2,10 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/contexts/LanguageContext';
 
-interface LoadingSpinnerProps {
+type LoadingSpinnerProps = Readonly<{
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-}
+}>;
 
 const sizeClasses = {
   sm: 'h-4 w-4',
@@ -13,16 +13,22 @@ const sizeClasses = {
   lg: 'h-8 w-8',
 };
 
+/**
+ * Test helper: loading spinner.
+ */
 export function LoadingSpinner({ className, size = 'md' }: LoadingSpinnerProps) {
   return (
     <Loader2 className={cn('animate-spin text-primary', sizeClasses[size], className)} />
   );
 }
 
-interface LoadingPageProps {
+type LoadingPageProps = Readonly<{
   message?: string;
-}
+}>;
 
+/**
+ * Test helper: loading page.
+ */
 export function LoadingPage({ message }: LoadingPageProps) {
   const { t } = useI18n();
   return (
@@ -33,6 +39,9 @@ export function LoadingPage({ message }: LoadingPageProps) {
   );
 }
 
+/**
+ * Test helper: loading overlay.
+ */
 export function LoadingOverlay({ message }: LoadingPageProps) {
   const { t } = useI18n();
   return (

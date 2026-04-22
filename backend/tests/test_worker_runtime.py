@@ -1,0 +1,127 @@
+"""Tests for the worker runtime behavior."""
+
+# Tests access private helpers of modules-under-test intentionally.
+# pylint: disable=protected-access
+
+# Test fixture classes commonly have a single public method by design.
+# pylint: disable=too-few-public-methods
+
+from __future__ import annotations
+
+
+from app import worker
+
+
+class _FakeDb:
+    """Test double standing in for a real db."""
+
+    def __init__(self) -> None:
+        """Initializes the instance state."""
+        self.closed = False
+
+    def close(self) -> None:
+        """Implements the close helper."""
+        self.closed = True
+
+
+def _prepare_worker(monkeypatch):
+    """Implements the prepare worker helper."""
+    events = []
+    warnings = []
+    handlers = {}
+    db_instances = []
+
+    monkeypatch.setattr(worker, "configure_logging", lambda: None)
+    monkeypatch.setattr(
+        worker, "log_event", lambda event, **kw: events.append((event, kw))
+    )
+    monkeypatch.setattr(
+        worker, "log_warning", lambda event, **kw: warnings.append((event, kw))
+    )
+    monkeypatch.setattr(worker, "idle_sleep", lambda: None)
+    monkeypatch.setattr(worker, "process_job", lambda db, job: None)
+    monkeypatch.setattr(worker, "requeue_stale_jobs", lambda db: 0)
+
+    def _signal(sig, fn):
+        """Implements the signal helper."""
+        handlers[sig] = fn
+
+    monkeypatch.setattr(worker.signal, "signal", _signal)
+
+    def _session_local():
+        """Implements the session local helper."""
+        db = _FakeDb()
+        db_instances.append(db)
+        return db
+
+    monkeypatch.setattr(worker, "SessionLocal", _session_local)
+    monkeypatch.setattr(worker, "_default_worker_id", lambda: "worker-test")
+    monkeypatch.setattr(worker.settings, "task_queue_poll_interval_seconds", 0.0)
+    monkeypatch.setattr(worker.settings, "task_queue_stale_after_seconds", 1)
+
+    return events, warnings, handlers, db_instances
+
+
+def test_worker_main_graceful_shutdown(monkeypatch):
+    """Verifies worker main graceful shutdown behavior."""
+    events, warnings, handlers, db_instances = _prepare_worker(monkeypatch)
+
+    def _claim(_db, worker_id):
+        """Implements the claim helper."""
+        assert worker_id == "worker-test"
+        handlers[worker.signal.SIGINT](worker.signal.SIGINT, None)
+
+    monkeypatch.setattr(worker, "claim_next_job", _claim)
+    worker.main()
+
+    assert any(evt == "worker_started" for evt, _ in events)
+    assert any(evt == "worker_stopped" for evt, _ in events)
+    assert any(evt == "worker_shutdown_requested" for evt, _ in warnings)
+    assert db_instances and all(db.closed for db in db_instances)
+
+
+def test_default_worker_id_contains_separator() -> None:
+    """Verifies default worker id contains separator behavior."""
+    value = worker._default_worker_id()
+    assert ":" in value
+
+
+def test_worker_main_logs_loop_errors(monkeypatch):
+    """Verifies worker main logs loop errors behavior."""
+    events, warnings, handlers, db_instances = _prepare_worker(monkeypatch)
+
+    calls = {"count": 0}
+
+    def _claim(_db, worker_id):
+        """Implements the claim helper."""
+        assert worker_id == "worker-test"
+        calls["count"] += 1
+        if calls["count"] == 1:
+            return object()
+        handlers[worker.signal.SIGTERM](worker.signal.SIGTERM, None)
+        return None
+
+    def _process(_db, _job):
+        """Implements the process helper."""
+        raise RuntimeError("worker boom")
+
+    monkeypatch.setattr(worker, "claim_next_job", _claim)
+    monkeypatch.setattr(worker, "process_job", _process)
+
+    worker.main()
+
+    assert any(evt == "worker_started" for evt, _ in events)
+    assert any(evt == "worker_stopped" for evt, _ in events)
+    assert any(evt == "worker_loop_error" for evt, _ in warnings)
+    assert db_instances and all(db.closed for db in db_instances)
+
+
+def test_worker_module_entrypoint_runs_main(monkeypatch):
+    """Verifies worker module entrypoint runs main behavior."""
+    calls = []
+    monkeypatch.setattr(worker, "main", lambda: calls.append("ran"))
+
+    worker._maybe_run_main("__main__")
+    worker._maybe_run_main("app.worker")
+
+    assert calls == ["ran"]

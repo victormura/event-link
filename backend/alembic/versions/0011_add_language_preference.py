@@ -5,9 +5,12 @@ Revises: 0010_admin_user_mgmt
 Create Date: 2025-12-18
 """
 
+# Alembic revision variables (revision, down_revision, branch_labels,
+# depends_on) are framework-mandated names.
+# pylint: disable=invalid-name,no-name-in-module
+
 from alembic import op
 import sqlalchemy as sa
-
 
 # revision identifiers, used by Alembic.
 revision = "0011_add_language_preference"
@@ -17,11 +20,18 @@ depends_on = None
 
 
 def upgrade() -> None:
+    """Apply the language-preference migration."""
     op.add_column(
         "users",
-        sa.Column("language_preference", sa.String(length=10), nullable=False, server_default="system"),
+        sa.Column(
+            "language_preference",
+            sa.String(length=10),
+            nullable=False,
+            server_default="system",
+        ),
     )
 
 
 def downgrade() -> None:
+    """Revert the language-preference migration."""
     op.drop_column("users", "language_preference")
